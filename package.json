@@ -1,0 +1,16 @@
+{
+    "name": "create-form",
+    "version": "1.0.0",
+    "main": "create-form.js",
+    "scripts": {
+        "test": "echo \"Error: no test specified\" && exit 1"
+    },
+    "keywords": [],
+    "author": "scribbler",
+    "license": "ISC",
+    "type": "module",
+    "description": "",
+    "dependencies": {
+        "inquirer": "^12.9.4"
+    }
+}
