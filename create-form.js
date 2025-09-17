@@ -3,6 +3,7 @@ import inquirer from 'inquirer';
 import fs from 'fs';
 import path from 'path';
 import { Command } from 'commander';
+import { generatingForm, installingFormikYup } from './formik_yup-form.js';
 const program = new Command();
 
 /* === VAR === */
@@ -15,8 +16,9 @@ let JSON_LOC = '';
 
 program
     .option('--json <path>', 'path to jsonfile s directory')
-    .option('--y', 'Your are in the root directory') //done
-    .option('--file <name>', 'name of the json file used for the script');
+    .option('--y', 'Your are in the root directory')
+    .option('--file <name>', 'name of the json file used for the script')
+    .option('--FY', 'use formik & yup');
 program.parse(process.argv);
 const options = program.opts();
 
@@ -27,7 +29,8 @@ const options = program.opts();
 /* === MAIN FUNCTION === */
 async function main() {
     // proposer formik & yup =>  Après, une autre option, d'abord, faire marcher juste en html
-    console.log('creation of a form from a JSON file');
+    console.log('creation of a form from a JSON file for a React project');
+    let extension = '';
 
     //define root
     await ensureRootDirectory();
@@ -39,15 +42,61 @@ async function main() {
     const JSON_DATA = isFileValid();
 
     //process data
-    let contentHTML = dataProcessing(JSON_DATA);
+    let content = '';
+    if (options.FY) {
+        //option : want Fromik & Yup
+        const alreadyInRootFolder = await inquirer.prompt([
+            {
+                type: 'confirm',
+                name: 'hasFormikAndYup',
+                message: 'do you already have Formik and Yup installed ?',
+                default: false
+            }
+        ]);
+        if (!alreadyInRootFolder.hasFormikAndYup) {
+            await installingFormikYup();
+        }
+        content = generatingForm(JSON_DATA);
+        extension = 'tsx';
+    } else {
+        //no option selected
+        const wantToUseFY = await inquirer.prompt([
+            {
+                type: 'confirm',
+                name: 'useFY',
+                message: 'do you want to use formik and yup ?',
+                default: false
+            }
+        ]);
+        if (wantToUseFY.useFY) {
+            // want to use F & Y
+            const alreadyInRootFolder = await inquirer.prompt([
+                {
+                    type: 'confirm',
+                    name: 'hasFormikAndYup',
+                    message: 'do you already have Formik and Yup installed ?',
+                    default: false
+                }
+            ]);
+            if (!alreadyInRootFolder.hasFormikAndYup) {
+                await installingFormikYup();
+            }
+            content = generatingForm(JSON_DATA);
+            extension = 'tsx';
+        } else {
+            // doesn't want to use F & Y
+            content = dataProcessing(JSON_DATA);
+            extension = 'html';
+        }
+    }
 
+    //get file name
     const title = JSON_DATA.title;
-    //create js file
-    createFile(contentHTML, title);
 
-    //  créer input dans fichier JS/TS en fonction choix formik
+    //create file
+    createFile(content, title, extension);
 
-    console.log(`Done ! Your file is there : ${ROOT_DIR}/${title}.html`);
+    console.log(`Done ! Your file is there : ${ROOT_DIR}/${title}.${extension}`);
     //fin script
 }
 
@@ -89,7 +138,7 @@ async function searchJsonFile() {
     let json_file = '';
     if (options.json && options.file) {
         json_loc = path.join(options.json, `${options.file}.json`);
-        if (!checkFilExists(json_loc)) {
+        if (!checkFileExists(json_loc)) {
             return await searchJsonFile();
         }
         return json_loc;
@@ -99,7 +148,7 @@ async function searchJsonFile() {
         ]);
         json_file = `${nameJsonFile.nameJson}.json`;
         json_loc = path.join(options.json, `${json_file}.json`);
-        if (!checkFilExists(json_loc)) {
+        if (!checkFileExists(json_loc)) {
             return await searchJsonFile();
         }
         return json_loc;
@@ -123,12 +172,12 @@ async function searchJsonFile() {
                 }
             ]);
             json_loc = path.join(locationJsonThere.newlocationjson, `${options.file}.json`);
-            if (!checkFilExists(json_loc)) {
+            if (!checkFileExists(json_loc)) {
                 return await searchJsonFile();
             }
         }
 
-        if (!checkFilExists(json_loc)) {
+        if (!checkFileExists(json_loc)) {
             return await searchJsonFile();
         }
         return json_loc;
@@ -149,7 +198,7 @@ async function searchJsonFile() {
             json_file = `${nameJsonFile.nameJson}.json`;
             json_loc = path.join(ROOT_DIR, json_file);
 
-            if (checkFilExists(json_loc)) await searchJsonFile();
+            if (!checkFileExists(json_loc)) await searchJsonFile(); // <= bien trouvé mais on ne sort pas de la boucle !!
 
             return json_loc;
         } else {
@@ -164,7 +213,7 @@ async function searchJsonFile() {
             json_file = `${locationJsonThere.nameJson}.json`;
             json_loc = path.join(locationJsonThere.newlocationjson, json_file);
 
-            if (!checkFilExists(json_loc)) {
+            if (!checkFileExists(json_loc)) {
                 return await searchJsonFile();
             }
             return json_loc;
@@ -172,8 +221,9 @@ async function searchJsonFile() {
     }
 }
 
-function checkFilExists(location) {
+function checkFileExists(location) {
     if (fs.existsSync(location)) {
+        console.log(location);
         return true; // fichier trouvé
     } else {
         console.log("didn't find the file there:", location);
@@ -233,9 +283,9 @@ function generatedHtml(object) {
 }
 
 /* file creation */
-function createFile(content, title) {
+function createFile(content, title, extension) {
     try {
-        fs.writeFileSync(`${ROOT_DIR}/${title}.html`, content, 'utf8');
+        fs.writeFileSync(`${ROOT_DIR}/${title}.${extension}`, content, 'utf8');
     } catch (error) {
         console.log('error while trying to create the html file : ', error);
     }
