@@ -5,6 +5,7 @@ import path from 'path';
 import { Command } from 'commander';
 import { generatingForm, installingFormikYup } from './formik_yup-form.js';
 const program = new Command();
+import { installingRhFZod, generatingRZForm } from './rhf_zod-form.js';
 
 /* === VAR === */
 let ROOT_DIR = '';
@@ -18,7 +19,8 @@ program
     .option('--json <path>', 'path to jsonfile s directory')
     .option('--y', 'Your are in the root directory')
     .option('--file <name>', 'name of the json file used for the script')
-    .option('--FY', 'use formik & yup');
+    .option('--FY', 'use formik & yup')
+    .option('--RZ', 'use react hook form & zod');
 program.parse(process.argv);
 const options = program.opts();
 
@@ -45,7 +47,7 @@ async function main() {
     let content = '';
     if (options.FY) {
         //option : want Fromik & Yup
-        const alreadyInRootFolder = await inquirer.prompt([
+        const alreadyInsta = await inquirer.prompt([
             {
                 type: 'confirm',
                 name: 'hasFormikAndYup',
@@ -53,24 +55,40 @@ async function main() {
                 default: false
             }
         ]);
-        if (!alreadyInRootFolder.hasFormikAndYup) {
+        if (!alreadyInsta.hasRHFandZ) {
             await installingFormikYup();
         }
         content = generatingForm(JSON_DATA);
         extension = 'tsx';
-    } else {
-        //no option selected
-        const wantToUseFY = await inquirer.prompt([
+    } else if (options.RZ) {
+        //want RHF & zod
+        const alreadyInsta = await inquirer.prompt([
             {
                 type: 'confirm',
-                name: 'useFY',
-                message: 'do you want to use formik and yup ?',
+                name: 'hasRHFandZ',
+                message: 'do you already have React Hook Form and Zod installed ?',
                 default: false
             }
         ]);
-        if (wantToUseFY.useFY) {
+        if (!alreadyInsta.hasFormikAndYup) {
+            await installingRhFZod();
+        }
+        content = generatingRZForm(JSON_DATA);
+        extension = 'tsx';
+    } else {
+        //no option selected
+        const useFYorRZ = await inquirer.prompt([
+            {
+                type: 'list',
+                name: 'useFYorRZ',
+                message: 'do you want to use :',
+                choices: ['Formik & yup', 'ReactHookForm & Zod', 'none']
+            }
+        ]);
+
+        if (useFYorRZ.useFYorRZ === 'Formik & yup') {
             // want to use F & Y
-            const alreadyInRootFolder = await inquirer.prompt([
+            const FYInstalled = await inquirer.prompt([
                 {
                     type: 'confirm',
                     name: 'hasFormikAndYup',
@@ -78,13 +96,28 @@ async function main() {
                     default: false
                 }
             ]);
-            if (!alreadyInRootFolder.hasFormikAndYup) {
+            if (!FYInstalled.hasFormikAndYup) {
                 await installingFormikYup();
             }
             content = generatingForm(JSON_DATA);
             extension = 'tsx';
+        } else if (useFYorRZ.useFYorRZ === 'ReactHookForm & Zod') {
+            // want to use RHF & Zod
+            const RZInstalled = await inquirer.prompt([
+                {
+                    type: 'confirm',
+                    name: 'hasRHFandZod',
+                    message: 'do you already have React Hook Form and Zod installed ?',
+                    default: false
+                }
+            ]);
+            if (!RZInstalled.hasRHFandZod) {
+                await installingRhFZod();
+            }
+            content = generatingRZForm(JSON_DATA);
+            extension = 'tsx';
         } else {
-            // doesn't want to use F & Y
+            // doesn't want to use F&Y nor RHF&Z
             content = dataProcessing(JSON_DATA);
             extension = 'html';
         }
