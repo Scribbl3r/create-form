@@ -71,7 +71,7 @@ Make sure Node.js (v14+) is installed.
 | **undefined** | base only                                                                                                                                        | `z.undefined()`                                                    |
 
 
-Note: Not all Yup & zod attributes are currently implemented in the generator. If you need more, feel free to extend the generateYupSchema() function.
+Note: Not all Yup & zod attributes are currently implemented in the generator. If you need more, feel free to extend the generateYupSchema() or generateZodSchema() functions.
 
 ### example json for html only
 ```json
