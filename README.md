@@ -19,6 +19,7 @@ Make sure Node.js (v14+) is installed.
 --json <path> : path to the folder containing the JSON file.
 --file <name> : name of the JSON file (without the .json extension).
 --y : indicates that you are already in the project's root directory.
+--FY : generate a form with Formik & Yup
 ```
 
 
@@ -42,7 +43,21 @@ Make sure Node.js (v14+) is installed.
 | `readonly`    | boolean | Makes the field read-only.                                     |
 
 
+### supported Yup attributes
+| Type        | Supported Attributes                                                                                    | Example                                      |
+| ----------- | ------------------------------------------------------------------------------------------------------- | -------------------------------------------- |
+| **string**  | `min`, `max`, `length`, `email`, `url`, `uuid`, `matches`, `trim`, `lowercase`, `uppercase`, `required` | `yup.string().min(3).required()`             |
+| **number**  | `min`, `max`, `lessThan`, `moreThan`, `positive`, `negative`, `integer`, `required`                     | `yup.number().min(0).max(100)`               |
+| **boolean** | `oneOf`, `required`                                                                                     | `yup.boolean().oneOf([true])`                |
+| **date**    | `min`, `max`, `required`                                                                                | `yup.date().min(new Date("2020-01-01"))`     |
+| **array**   | `min`, `max`, `length`, `of`, `ensure`, `required`                                                      | `yup.array().of(yup.string()).min(2)`        |
+| **object**  | `shape`, `required`                                                                                     | `yup.object().shape({ name: yup.string() })` |
+| **mixed**   | `required`, `nullable`, `defined`, `notOneOf`, `oneOf`, `default`                                       | \`yup.mixed().n                              |
 
+
+
+Note: Not all Yup attributes are currently implemented in the generator. If you need more, feel free to extend the generateYupSchema() function.
+### example json for html only
 ```json
 {
   "title": "contactForm",
@@ -53,12 +68,46 @@ Make sure Node.js (v14+) is installed.
 }
 ```
 
+### example json for Formik & yup
+```json
+{
+  "title": "LoginForm",
+  "fields": [
+    {
+      "name": "email",
+      "label": "Email",
+      "type": "string",
+      "placeholder": "Votre email",
+      "required": true,
+      "email": true
+    },
+    {
+      "name": "password",
+      "label": "Mot de passe",
+      "type": "string",
+      "placeholder": "Votre mot de passe",
+      "required": true,
+      "minLength": 6
+    }
+  ]
+}
+
+```
+
 ## Command :
-`node index.js --json ./json --file form`
+```bash
+# Génération en HTML simple
+node index.js --json ./data --file login  
+
+# Génération en React (Formik + Yup)
+node index.js --json ./data --file login --FY  
+```
 
 ## Result
-
-### Generated file: ./contactForm.html : ./contactForm.html
+### Generated file:
+  ./contactForm.html if HTML
+  ./contactForm.tsx if Formik &  Yup
+  
 ```html
 <Form>
 <label for="email">Email</label>
